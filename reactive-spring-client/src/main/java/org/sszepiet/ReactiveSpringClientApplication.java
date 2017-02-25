@@ -4,9 +4,9 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class ReactiveSpringApplication {
+public class ReactiveSpringClientApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(ReactiveSpringApplication.class, args);
+        SpringApplication.run(ReactiveSpringClientApplication.class, args);
     }
 }
