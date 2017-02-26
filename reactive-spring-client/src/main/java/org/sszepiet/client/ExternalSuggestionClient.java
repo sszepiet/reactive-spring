@@ -3,6 +3,7 @@ package org.sszepiet.client;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
@@ -15,6 +16,7 @@ import java.util.List;
 import java.util.Locale;
 
 @Component
+@RefreshScope
 public class ExternalSuggestionClient {
 
     private static final Logger log = LoggerFactory.getLogger(ExternalSuggestionClient.class);

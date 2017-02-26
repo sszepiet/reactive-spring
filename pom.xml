@@ -9,6 +9,7 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>config-server</module>
         <module>reactive-spring-client</module>
         <module>reactive-spring-server</module>
     </modules>
