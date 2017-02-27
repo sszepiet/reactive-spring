@@ -8,10 +8,12 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.sszepiet.model.Video;
 import reactor.core.publisher.Flux;
 
+import java.net.URI;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
@@ -28,33 +30,37 @@ public class ExternalSuggestionClient {
     private String suggestionsServerUrl;
 
     private final RestTemplate restTemplate;
+    private final WebClient webClient;
 
-    public ExternalSuggestionClient(RestTemplate restTemplate) {
+    public ExternalSuggestionClient(RestTemplate restTemplate, WebClient webClient) {
         this.restTemplate = restTemplate;
+        this.webClient = webClient;
     }
 
     public List<Video> getAgeSuggestions(LocalDate localDate) {
         log.info("Fetching age suggestions...");
-        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(suggestionsServerUrl)
-                .queryParam("dateOfBirth", localDate);
-        return restTemplate.exchange(builder.build().encode().toUri(), HttpMethod.GET, null, VIDEO_LIST)
+        return restTemplate.exchange(buildUriWithQueryParam("dateOfBirth", localDate), HttpMethod.GET, null, VIDEO_LIST)
                 .getBody();
     }
 
     public Flux<Video> getAgeSuggestionsReactive(LocalDate localDate) {
-        return Flux.defer(() -> Flux.fromIterable(getAgeSuggestions(localDate)));
+        return webClient.get()
+                .uri(buildUriWithQueryParam("dateOfBirth", localDate))
+                .exchange()
+                .flatMap(clientResponse -> clientResponse.bodyToFlux(Video.class));
     }
 
     public List<Video> getLocaleSuggestions(Locale locale) {
         log.info("Fetching locale suggestions...");
-        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(suggestionsServerUrl)
-                .queryParam("locale", locale);
-        return restTemplate.exchange(builder.build().encode().toUri(), HttpMethod.GET, null, VIDEO_LIST)
+        return restTemplate.exchange(buildUriWithQueryParam("locale", locale), HttpMethod.GET, null, VIDEO_LIST)
                 .getBody();
     }
 
     public Flux<Video> getLocaleSuggestionsReactive(Locale locale) {
-        return Flux.defer(() -> Flux.fromIterable(getLocaleSuggestions(locale)));
+        return webClient.get()
+                .uri(buildUriWithQueryParam("locale", locale))
+                .exchange()
+                .flatMap(clientResponse -> clientResponse.bodyToFlux(Video.class));
     }
 
     public List<Video> getPreviouslyWatchedSuggestions() {
@@ -64,6 +70,15 @@ public class ExternalSuggestionClient {
     }
 
     public Flux<Video> getPreviouslyWatchedSuggestionsReactive() {
-        return Flux.defer(() -> Flux.fromIterable(getPreviouslyWatchedSuggestions()));
+        return webClient.get()
+                .uri(suggestionsServerUrl)
+                .exchange()
+                .flatMap(clientResponse -> clientResponse.bodyToFlux(Video.class));
     }
+
+    private URI buildUriWithQueryParam(String queryParamName, Object queryParam) {
+        return UriComponentsBuilder.fromHttpUrl(suggestionsServerUrl)
+                .queryParam(queryParamName, queryParam).build().encode().toUri();
+    }
+
 }

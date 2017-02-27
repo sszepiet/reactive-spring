@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 import org.sszepiet.model.User;
 import reactor.core.publisher.Mono;
 
@@ -19,9 +20,11 @@ public class AuthorizationServerClient {
     private String authorizationServerUrl;
 
     private final RestTemplate restTemplate;
+    private final WebClient webClient;
 
-    public AuthorizationServerClient(RestTemplate restTemplate) {
+    public AuthorizationServerClient(RestTemplate restTemplate, WebClient webClient) {
         this.restTemplate = restTemplate;
+        this.webClient = webClient;
     }
 
     public User getUserData(long userId) {
@@ -30,6 +33,9 @@ public class AuthorizationServerClient {
     }
 
     public Mono<User> getUserDataReactive(long userId) {
-        return Mono.defer(() -> Mono.just(getUserData(userId)));
+        return webClient.get()
+                .uri(authorizationServerUrl + userId)
+                .exchange()
+                .then(clientResponse -> clientResponse.bodyToMono(User.class));
     }
 }
