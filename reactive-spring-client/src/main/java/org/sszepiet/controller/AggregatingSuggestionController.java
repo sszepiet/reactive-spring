@@ -75,8 +75,14 @@ public class AggregatingSuggestionController {
         );
     }
 
-    @GetMapping("/flux/test")
+    @GetMapping(value = "/flux/test", produces = "text/event-stream")
     public Flux<Integer> showFluxTest() {
         return Flux.range(1, 10).delayElements(Duration.ofMillis(500L));
+    }
+
+    @GetMapping(value = "/flux/test/non-browser", produces = "application/stream+json")
+    public Flux<Video> showSuggestionsTest() {
+        log.info("Hello non-browser");
+        return Flux.just(Video.builder().title("Sami swoi").build(), Video.builder().title("Power rangers").build()).delayElements(Duration.ofSeconds(2L));
     }
 }
