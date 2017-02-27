@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.sszepiet.model.Video;
+import reactor.core.publisher.Flux;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -40,6 +41,10 @@ public class ExternalSuggestionClient {
                 .getBody();
     }
 
+    public Flux<Video> getAgeSuggestionsReactive(LocalDate localDate) {
+        return Flux.defer(() -> Flux.fromIterable(getAgeSuggestions(localDate)));
+    }
+
     public List<Video> getLocaleSuggestions(Locale locale) {
         log.info("Fetching locale suggestions...");
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(suggestionsServerUrl)
@@ -48,9 +53,17 @@ public class ExternalSuggestionClient {
                 .getBody();
     }
 
+    public Flux<Video> getLocaleSuggestionsReactive(Locale locale) {
+        return Flux.defer(() -> Flux.fromIterable(getLocaleSuggestions(locale)));
+    }
+
     public List<Video> getPreviouslyWatchedSuggestions() {
         log.info("Fetching previously watched suggestions...");
         return restTemplate.exchange(suggestionsServerUrl, HttpMethod.GET, null, VIDEO_LIST)
                 .getBody();
+    }
+
+    public Flux<Video> getPreviouslyWatchedSuggestionsReactive() {
+        return Flux.defer(() -> Flux.fromIterable(getPreviouslyWatchedSuggestions()));
     }
 }

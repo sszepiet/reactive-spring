@@ -9,7 +9,11 @@ import org.sszepiet.client.AuthorizationServerClient;
 import org.sszepiet.client.ExternalSuggestionClient;
 import org.sszepiet.model.User;
 import org.sszepiet.model.Video;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -38,13 +42,41 @@ public class AggregatingSuggestionController {
         log.info("Obtained age suggestions!");
         List<Video> localeSuggestions = externalSuggestionClient.getLocaleSuggestions(user.getLocale());
         log.info("Obtained locale suggestions!");
-        List<Video> previoslyWatchedSuggestions = externalSuggestionClient.getPreviouslyWatchedSuggestions();
+        List<Video> previouslyWatchedSuggestions = externalSuggestionClient.getPreviouslyWatchedSuggestions();
         log.info("Obtained previously watched suggestions!");
-        List<Video> suggestions = Stream.of(ageSuggestions.stream(), localeSuggestions.stream(), previoslyWatchedSuggestions.stream())
+        List<Video> suggestions = Stream.of(ageSuggestions.stream(), localeSuggestions.stream(), previouslyWatchedSuggestions.stream())
                 .flatMap(Function.identity())
                 .distinct()
                 .collect(Collectors.toList());
         log.info("Combined results!");
         return suggestions;
+    }
+
+    @GetMapping("/reactive")
+    public Flux<Video> provideSuggestionsReactive() {
+        log.info("Starting to fetch suggestions reactive...");
+        Mono<User> userMono = authorizationServerClient.getUserDataReactive(1L);
+
+        return userMono.flatMap(user -> {
+                    log.info("Obtained user: " + user.toString());
+                    Flux<Video> ageSuggestions = externalSuggestionClient.getAgeSuggestionsReactive(user.getDateOfBirth())
+                            .log()
+                            .subscribeOn(Schedulers.elastic());
+                    Flux<Video> localeSuggestions = externalSuggestionClient.getLocaleSuggestionsReactive(user.getLocale())
+                            .log()
+                            .subscribeOn(Schedulers.elastic());
+                    Flux<Video> previouslyWatchedSuggestions = externalSuggestionClient.getPreviouslyWatchedSuggestionsReactive()
+                            .log()
+                            .subscribeOn(Schedulers.elastic());
+                    return ageSuggestions.mergeWith(localeSuggestions)
+                            .mergeWith(previouslyWatchedSuggestions)
+                            .distinct();
+                }
+        );
+    }
+
+    @GetMapping("/flux/test")
+    public Flux<Integer> showFluxTest() {
+        return Flux.range(1, 10).delayElements(Duration.ofMillis(500L));
     }
 }

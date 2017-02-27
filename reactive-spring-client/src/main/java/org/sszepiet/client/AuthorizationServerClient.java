@@ -7,6 +7,7 @@ import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.sszepiet.model.User;
+import reactor.core.publisher.Mono;
 
 @Component
 @RefreshScope
@@ -26,5 +27,9 @@ public class AuthorizationServerClient {
     public User getUserData(long userId) {
         log.info("Fetching user...");
         return restTemplate.getForObject(authorizationServerUrl + userId, User.class);
+    }
+
+    public Mono<User> getUserDataReactive(long userId) {
+        return Mono.defer(() -> Mono.just(getUserData(userId)));
     }
 }
