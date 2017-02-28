@@ -13,7 +13,8 @@ public class WebClientConsumptionTest {
         Flux<Video> videoFlux = WebClient.create().get().uri("http://localhost:8081/suggestions/flux/test/non-browser")
                 .accept(MediaType.APPLICATION_STREAM_JSON)
                 .exchange()
-                .flatMap(clientResponse -> clientResponse.bodyToFlux(Video.class));
+                .flatMap(clientResponse -> clientResponse.bodyToFlux(Video.class))
+                .doOnNext(video -> System.out.println(video.toString()));
 
         videoFlux.collectList().block().forEach(video -> System.out.println(video.toString()));
     }
