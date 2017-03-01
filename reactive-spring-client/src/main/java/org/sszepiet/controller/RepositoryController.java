@@ -7,6 +7,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.sszepiet.entity.SimpleEntity;
 import org.sszepiet.service.RepositoryService;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 @RestController
 @RequestMapping("/repositoryobjects")
@@ -24,6 +25,16 @@ public class RepositoryController {
         return ResponseEntity.created(UriComponentsBuilder
                 .fromUriString("http://localhost:8081/repositoryobjects/" + repositoryObject.getId()).build().encode().toUri())
                 .build();
+    }
+
+    @PostMapping("/reactive")
+    public Mono<ResponseEntity> saveReactive(@RequestBody SimpleEntity entity) {
+        return Mono.just(entity).publishOn(Schedulers.parallel())
+                .doOnNext(repositoryService::save)
+                .subscribe()
+                .map(entity1 -> ResponseEntity.created(UriComponentsBuilder
+                        .fromUriString("http://localhost:8081/repositoryobjects/" + entity1.getId()).build().encode().toUri())
+                        .build());
     }
 
     @GetMapping("/{id}")

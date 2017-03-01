@@ -11,7 +11,6 @@ import org.sszepiet.model.User;
 import org.sszepiet.model.Video;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 
 import java.time.Duration;
 import java.util.List;
@@ -60,14 +59,11 @@ public class AggregatingSuggestionController {
         return userMono.flatMap(user -> {
                     log.info("Obtained user: " + user.toString());
                     Flux<Video> ageSuggestions = externalSuggestionClient.getAgeSuggestionsReactive(user.getDateOfBirth())
-                            .log()
-                            .subscribeOn(Schedulers.elastic());
+                            .log();
                     Flux<Video> localeSuggestions = externalSuggestionClient.getLocaleSuggestionsReactive(user.getLocale())
-                            .log()
-                            .subscribeOn(Schedulers.elastic());
+                            .log();
                     Flux<Video> previouslyWatchedSuggestions = externalSuggestionClient.getPreviouslyWatchedSuggestionsReactive()
-                            .log()
-                            .subscribeOn(Schedulers.elastic());
+                            .log();
                     return ageSuggestions.mergeWith(localeSuggestions)
                             .mergeWith(previouslyWatchedSuggestions)
                             .distinct();
